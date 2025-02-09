@@ -1,21 +1,28 @@
-from flask import Flask, jsonify
 import os
-from dotenv import load_dotenv
+from flask import Flask, jsonify
+from flask_cors import CORS
 
-# Load environment variables from .env
-load_dotenv()
+# Load .env variables only in local development
+debug_mode = os.getenv("RENDER") is None
+if debug_mode:
+    try:
+        from dotenv import load_dotenv
+        load_dotenv()
+    except ModuleNotFoundError:
+        print("Warning: dotenv module not found. Skipping local environment loading.")
 
 app = Flask(__name__)
+CORS(app)
 
-# Retrieve API Key from environment variables
-API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+@app.route('/')
+def home():
+    return "Welcome to the Oldskol API"
 
 @app.route('/get-api-key')
 def get_api_key():
-    """Return the Google Maps API key securely."""
-    if not API_KEY:
-        return jsonify({"error": "API key not found"}), 500
-    return jsonify({"apiKey": API_KEY})
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY", "Key_Not_Found")
+    return jsonify({"apiKey": api_key})  # Returns the secure key
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    port = int(os.environ.get("PORT", 10000))  # Use Render's provided PORT
+    app.run(host='0.0.0.0', port=port)
